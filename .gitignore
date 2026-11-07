@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+.venv/
+venv/
+.idea/
+.vscode/
+.DS_Store
+
+# 样例库是生成物，由 fixtures/build_db.py 重建
+fixtures/fixture.db

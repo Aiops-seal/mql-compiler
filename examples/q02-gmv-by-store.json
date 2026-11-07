@@ -1,0 +1,7 @@
+{
+  "mql_version": "1.1",
+  "metrics": [{"name": "gmv"}],
+  "dimensions": [{"name": "store"}],
+  "time_range": {"start": "last_month_start", "end": "last_month_end"},
+  "sort": [{"field": "gmv", "order": "desc"}]
+}

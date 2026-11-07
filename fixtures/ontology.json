@@ -1,0 +1,297 @@
+{
+  "version": "1.0",
+  "domain": "ord",
+  "tables": [
+    {
+      "name": "dwd_order_di",
+      "kind": "fact",
+      "grain": [
+        "order_id"
+      ],
+      "columns": {
+        "order_id": "string",
+        "store_id": "string",
+        "product_id": "string",
+        "order_date": "date",
+        "channel": "string",
+        "pay_amount": "decimal",
+        "refund_amount": "decimal",
+        "is_valid": "int8"
+      },
+      "layer": "detail"
+    },
+    {
+      "name": "ads_gmv_1d",
+      "kind": "fact",
+      "grain": [
+        "date",
+        "city"
+      ],
+      "columns": {
+        "date": "date",
+        "city": "string",
+        "gmv": "decimal",
+        "order_count": "int8"
+      },
+      "layer": "agg"
+    },
+    {
+      "name": "dim_store",
+      "kind": "dimension",
+      "key": "store_id",
+      "columns": {
+        "store_id": "string",
+        "store_name": "string",
+        "city": "string",
+        "region": "string",
+        "store_type": "string",
+        "open_date": "date"
+      }
+    },
+    {
+      "name": "dim_product",
+      "kind": "dimension",
+      "key": "product_id",
+      "columns": {
+        "product_id": "string",
+        "category": "string",
+        "product_type": "string"
+      }
+    },
+    {
+      "name": "dim_date",
+      "kind": "dimension",
+      "key": "date",
+      "columns": {
+        "date": "date",
+        "year": "int",
+        "month": "int",
+        "is_holiday": "int8"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "from": "dwd_order_di",
+      "to": "dim_store",
+      "on": "store_id",
+      "cardinality": "many_to_one"
+    },
+    {
+      "from": "dwd_order_di",
+      "to": "dim_product",
+      "on": "product_id",
+      "cardinality": "many_to_one"
+    },
+    {
+      "from": "dwd_order_di",
+      "to": "dim_date",
+      "on": [
+        "order_date",
+        "date"
+      ],
+      "cardinality": "many_to_one"
+    },
+    {
+      "from": "ads_gmv_1d",
+      "to": "dim_store",
+      "on": "city",
+      "cardinality": "one_to_many"
+    }
+  ],
+  "metrics": [
+    {
+      "name": "gmv",
+      "display": "成交额",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "expr": "SUM({f}.pay_amount)",
+          "requires": [
+            "{f}.is_valid = 1"
+          ]
+        },
+        {
+          "table": "ads_gmv_1d",
+          "expr": "SUM({f}.gmv)",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "name": "order_count",
+      "display": "订单数",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "expr": "COUNT(DISTINCT {f}.order_id)",
+          "requires": [
+            "{f}.is_valid = 1"
+          ]
+        },
+        {
+          "table": "ads_gmv_1d",
+          "expr": "SUM({f}.order_count)",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "name": "refund_amount",
+      "display": "退款额",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "expr": "SUM({f}.refund_amount)",
+          "requires": []
+        }
+      ]
+    },
+    {
+      "name": "avg_order_amount",
+      "display": "客单价",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "expr": "AVG({f}.pay_amount)",
+          "requires": [
+            "{f}.is_valid = 1"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "same_store_gmv",
+      "display": "同店成交额",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "expr": "SUM({f}.pay_amount)",
+          "requires": [
+            "{f}.is_valid = 1"
+          ]
+        }
+      ],
+      "scoped_filters": [
+        {
+          "table": "dim_store",
+          "on": "store_id",
+          "condition": "dim_store.open_date <= {period_start} - 365d"
+        }
+      ]
+    }
+  ],
+  "properties": [
+    {
+      "name": "city",
+      "display": "城市",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_store",
+          "column": "city"
+        },
+        {
+          "table": "ads_gmv_1d",
+          "column": "city"
+        }
+      ]
+    },
+    {
+      "name": "store",
+      "display": "门店",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_store",
+          "column": "store_id"
+        },
+        {
+          "table": "dwd_order_di",
+          "column": "store_id"
+        }
+      ]
+    },
+    {
+      "name": "region",
+      "display": "大区",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_store",
+          "column": "region"
+        }
+      ]
+    },
+    {
+      "name": "store_type",
+      "display": "门店类型",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_store",
+          "column": "store_type"
+        }
+      ]
+    },
+    {
+      "name": "category",
+      "display": "品类",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_product",
+          "column": "category"
+        }
+      ]
+    },
+    {
+      "name": "product_type",
+      "display": "商品类型",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_product",
+          "column": "product_type"
+        }
+      ]
+    },
+    {
+      "name": "channel",
+      "display": "渠道",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "column": "channel"
+        }
+      ]
+    },
+    {
+      "name": "order_date",
+      "display": "下单日期",
+      "kind": "time",
+      "bindings": [
+        {
+          "table": "dwd_order_di",
+          "column": "order_date"
+        },
+        {
+          "table": "ads_gmv_1d",
+          "column": "date"
+        }
+      ]
+    },
+    {
+      "name": "is_holiday",
+      "display": "是否节假日",
+      "kind": "enum",
+      "bindings": [
+        {
+          "table": "dim_date",
+          "column": "is_holiday"
+        }
+      ]
+    }
+  ]
+}

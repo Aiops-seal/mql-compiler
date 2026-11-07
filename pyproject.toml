@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mql-compiler"
+version = "1.0.0"
+description = "Compile MQL (Metrics Query Language) into SQL — deterministic, with an auditable plan"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+keywords = ["mql", "sql", "semantic-layer", "compiler", "text-to-sql", "llm"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+mqlc = "mqlc.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["mqlc*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
